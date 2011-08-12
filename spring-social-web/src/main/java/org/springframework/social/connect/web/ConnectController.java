@@ -49,7 +49,7 @@ import org.springframework.web.servlet.view.RedirectView;
 /**
  * Generic UI controller for managing the account-to-service-provider connection flow.
  * <ul>
- * <li>GET /connect/{providerId}  - Get a web page showing connection status to {providerId}.</li>
+ * <li>GET /connect  - Get a web page showing connection status for all providers.</li>
  * <li>POST /connect/{providerId} - Initiate an connection with {providerId}.</li>
  * <li>GET /connect/{providerId}?oauth_verifier||code - Receive {providerId} authorization callback and establish the connection.</li>
  * <li>DELETE /connect/{providerId} - Disconnect from {providerId}.</li>
@@ -201,16 +201,6 @@ public class ConnectController {
 	// subclassing hooks
 	
 	/**
-	 * Returns the view name of a page to display for a provider when the user is not connected to the provider.
-	 * Typically this page would offer the user an opportunity to create a connection with the provider.
-	 * Defaults to "connect/{providerId}Connect". May be overridden to return a custom view name.
-	 * @param providerId the ID of the provider to display the connection status for.
-	 */
-	protected String connectView(String providerId) {
-		return getViewPath() + providerId + "Connect";		
-	}
-
-	/**
 	 * Returns the view name of a general connection status page, typically displaying the user's connection status for all providers.
 	 * Defaults to "/connect/status". May be overridden to return a custom view name.
 	 */
@@ -218,16 +208,6 @@ public class ConnectController {
 		return getViewPath() + "status";
 	}
 	
-	/**
-	 * Returns the view name of a page to display for a provider when the user is connected to the provider.
-	 * Typically this page would allow the user to disconnect from the provider.
-	 * Defaults to "connect/{providerId}Connected". May be overridden to return a custom view name.
-	 * @param providerId the ID of the provider to display the connection status for.
-	 */
-	protected String connectedView(String providerId) {
-		return getViewPath() + providerId + "Connected";		
-	}
-
 	/**
 	 * Returns a RedirectView with the URL to redirect to after a connection is created or deleted.
 	 * Defaults to "/connect/{providerId}" relative to the servlet context path. 
