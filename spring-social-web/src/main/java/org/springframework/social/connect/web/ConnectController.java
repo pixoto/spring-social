@@ -15,9 +15,9 @@
  */
 package org.springframework.social.connect.web;
 
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -100,7 +100,7 @@ public class ConnectController {
 	 * If you have this problem, you can set this property to the base external URL for your application and it will be used to construct the callback URL instead.
 	 * @param applicationUrl the application URL value
 	 */
-	public void setApplicationUrl(URL applicationUrl) {
+	public void setApplicationUrl(String applicationUrl) {
 		webSupport.setApplicationUrl(applicationUrl);
 	}
 	
@@ -114,6 +114,19 @@ public class ConnectController {
 		interceptors.add(serviceApiType, interceptor);
 	}
 
+	/**
+	 * Render the status of connections across all providers to the user as HTML in their web browser.
+	 */
+	@RequestMapping(method=RequestMethod.GET)
+	public String connectionStatus(NativeWebRequest request, Model model) {
+		setNoCache(request);
+		processFlash(request, model);
+		Map<String, List<Connection<?>>> connections = connectionRepository.findAllConnections();
+		model.addAttribute("providerIds", connectionFactoryLocator.registeredProviderIds());		
+		model.addAttribute("connectionMap", connections);
+		return connectView();
+	}
+	
 	/**
 	 * Render the status of the connections to the service provider to the user as HTML in their web browser.
 	 */
@@ -138,8 +151,9 @@ public class ConnectController {
 	@RequestMapping(value="/{providerId}", method=RequestMethod.POST)
 	public RedirectView connect(@PathVariable String providerId, NativeWebRequest request) {
 		ConnectionFactory<?> connectionFactory = connectionFactoryLocator.getConnectionFactory(providerId);
-		preConnect(connectionFactory, request);
-		return new RedirectView(webSupport.buildOAuthUrl(connectionFactory, request));
+		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<String, String>(); 
+		preConnect(connectionFactory, parameters, request);
+		return new RedirectView(webSupport.buildOAuthUrl(connectionFactory, request, parameters));
 	}
 
 	/**
@@ -192,6 +206,13 @@ public class ConnectController {
 	}
 
 	// subclassing hooks
+	/**
+	 * Returns the view name of a general connection status page, typically displaying the user's connection status for all providers.
+	 * Defaults to "/connect/status". May be overridden to return a custom view name.
+	 */
+	protected String connectView() {
+		return getViewPath() + "status";
+	}
 	
 	/**
 	 * Returns the view name of a page to display for a provider when the user is not connected to the provider.
@@ -239,9 +260,9 @@ public class ConnectController {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private void preConnect(ConnectionFactory<?> connectionFactory, WebRequest request) {
+	private void preConnect(ConnectionFactory<?> connectionFactory, MultiValueMap<String, String> parameters, WebRequest request) {
 		for (ConnectInterceptor interceptor : interceptingConnectionsTo(connectionFactory)) {
-			interceptor.preConnect(connectionFactory, request);
+			interceptor.preConnect(connectionFactory, parameters, request);
 		}
 	}
 
