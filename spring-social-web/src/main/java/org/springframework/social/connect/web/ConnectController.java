@@ -23,6 +23,8 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.social.connect.Connection;
 import org.springframework.social.connect.ConnectionFactory;
@@ -36,6 +38,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -44,6 +47,8 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.filter.HiddenHttpMethodFilter;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.UrlPathHelper;
+import org.springframework.web.util.WebUtils;
 
 /**
  * Generic UI controller for managing the account-to-service-provider connection flow.
@@ -61,6 +66,8 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequestMapping("/connect")
 public class ConnectController {
 	
+	private final static Log logger = LogFactory.getLog(ConnectController.class);
+	
 	private final ConnectionFactoryLocator connectionFactoryLocator;
 	
 	private final ConnectionRepository connectionRepository;
@@ -69,6 +76,8 @@ public class ConnectController {
 
 	private final ConnectSupport webSupport = new ConnectSupport();
 	
+	private final UrlPathHelper urlPathHelper = new UrlPathHelper();
+
 	/**
 	 * Constructs a ConnectController.
 	 * @param connectionFactoryLocator the locator for {@link ConnectionFactory} instances needed to establish connections
@@ -167,7 +176,7 @@ public class ConnectController {
 		OAuth1ConnectionFactory<?> connectionFactory = (OAuth1ConnectionFactory<?>) connectionFactoryLocator.getConnectionFactory(providerId);
 		Connection<?> connection = webSupport.completeConnection(connectionFactory, request);
 		addConnection(connection, connectionFactory, request);
-		return connectionStatusRedirect(providerId);
+		return connectionStatusRedirect(providerId, request);
 	}
 
 	/**
@@ -177,10 +186,14 @@ public class ConnectController {
 	 */
 	@RequestMapping(value="/{providerId}", method=RequestMethod.GET, params="code")
 	public RedirectView oauth2Callback(@PathVariable String providerId, NativeWebRequest request) {
-		OAuth2ConnectionFactory<?> connectionFactory = (OAuth2ConnectionFactory<?>) connectionFactoryLocator.getConnectionFactory(providerId);
-		Connection<?> connection = webSupport.completeConnection(connectionFactory, request);
-		addConnection(connection, connectionFactory, request);
-		return connectionStatusRedirect(providerId);
+		try {
+			OAuth2ConnectionFactory<?> connectionFactory = (OAuth2ConnectionFactory<?>) connectionFactoryLocator.getConnectionFactory(providerId);
+			Connection<?> connection = webSupport.completeConnection(connectionFactory, request);
+			addConnection(connection, connectionFactory, request);
+		} catch (Exception e) {
+			logger.warn("Exception while handling OAuth2 callback (" + e.getMessage() + "). Redirecting to " + providerId +" connection status page.");
+		}
+		return connectionStatusRedirect(providerId, request);
 	}
 
 	/**
@@ -189,9 +202,9 @@ public class ConnectController {
 	 * Note: requires {@link HiddenHttpMethodFilter} to be registered with the '_method' request parameter set to 'DELETE' to convert web browser POSTs to DELETE requests.
 	 */
 	@RequestMapping(value="/{providerId}", method=RequestMethod.DELETE)
-	public RedirectView removeConnections(@PathVariable String providerId) {
+	public RedirectView removeConnections(@PathVariable String providerId, NativeWebRequest request) {
 		connectionRepository.removeConnections(providerId);
-		return connectionStatusRedirect(providerId);
+		return connectionStatusRedirect(providerId, request);
 	}
 
 	/**
@@ -200,9 +213,9 @@ public class ConnectController {
 	 * Note: requires {@link HiddenHttpMethodFilter} to be registered with the '_method' request parameter set to 'DELETE' to convert web browser POSTs to DELETE requests.
 	 */
 	@RequestMapping(value="/{providerId}/{providerUserId}", method=RequestMethod.DELETE)
-	public RedirectView removeConnection(@PathVariable String providerId, @PathVariable String providerUserId, HttpServletRequest request) {
+	public RedirectView removeConnection(@PathVariable String providerId, @PathVariable String providerUserId, NativeWebRequest request) {
 		connectionRepository.removeConnection(new ConnectionKey(providerId, providerUserId));
-		return connectionStatusRedirect(providerId);
+		return connectionStatusRedirect(providerId, request);
 	}
 
 	// subclassing hooks
@@ -236,15 +249,36 @@ public class ConnectController {
 
 	/**
 	 * Returns a RedirectView with the URL to redirect to after a connection is created or deleted.
-	 * Defaults to "/connect/{providerId}" relative to the servlet context path. 
+	 * Defaults to "/connect/{providerId}" relative to DispatcherServlet's path. 
 	 * May be overridden to handle custom redirection needs.
 	 * @param providerId the ID of the provider for which a connection was created or deleted.
+	 * @param request the NativeWebRequest used to access the servlet path when constructing the redirect path.
 	 */
-	protected RedirectView connectionStatusRedirect(String providerId) {
-		return new RedirectView("/connect/" + providerId, true);
+	protected RedirectView connectionStatusRedirect(String providerId, NativeWebRequest request) {
+		HttpServletRequest servletRequest = request.getNativeRequest(HttpServletRequest.class);
+		String path = "/connect/" + providerId + getPathExtension(servletRequest);
+		if (prependServletPath(servletRequest)) {
+			path = servletRequest.getServletPath() + path;
+		}
+		return new RedirectView(path, true);
 	}
 
 	// internal helpers
+
+	private boolean prependServletPath(HttpServletRequest request) {
+		return !this.urlPathHelper.getPathWithinServletMapping(request).equals("");
+	}
+	
+	/*
+	 * Determines the path extension, if any.
+	 * Returns the extension, including the period at the beginning, or an empty string if there is no extension.
+	 * This makes it possible to append the returned value to a path even if there is no extension.
+	 */
+	private String getPathExtension(HttpServletRequest request) {
+		String fileName = WebUtils.extractFullFilenameFromUrlPath(request.getRequestURI());		
+		String extension = StringUtils.getFilenameExtension(fileName);
+		return extension != null ? "." + extension : "";
+	}
 
 	private String getViewPath() {
 		return "connect/";
