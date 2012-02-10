@@ -13,9 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.springframework.social.connect.web.taglib;
 
-rootProject.name = 'spring-social'
+/**
+ * JSP Tag to return true/false if you're NOT connected to a provider. See {@link SocialConnectedTag} for sample usages with a JSP.
+ * 
+ * @author Rick Reumann
+ * @author Craig Walls
+ */
+@SuppressWarnings("serial")
+public class SocialNotConnectedTag extends BaseSocialConnectedTag {
 
-include 'docs'
-include 'spring-social-core'
-include 'spring-social-web'
+	@Override
+	protected int doStartTagInternal() throws Exception {
+		return super.evaluateBodyIfConnected(false);
+	}
+
+}

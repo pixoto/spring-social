@@ -1,5 +1,16 @@
-Spring Social 1.0.1 Release
-===========================
+Spring Social 1.0.2 Release (January 23, 2012)
+==============================================
+Bug Fixes
+  * Handle errors from provider during connection/sign-in process more gracefully. (SOCIAL-280)
+  * Properly set valuesInitialized flag in AbstractConnection after a profile has been set the first
+    time to avoid unnecessary fetches from the provider. (SOCIAL-282)
+  * Guard against potential NullPointerException in JdbcConnectionRepository.findConnectionToUsers().
+    (SOCIAL-283)
+  * Allow for null returned from ConnectionSignUp.execute() to indicate a problem with implicitly
+    creating a user. (SOCIAL-254)
+
+Spring Social 1.0.1 Release (December 15, 2011)
+===============================================
 Compatibility Notes
   * Changed signature of ConnectController.connectionStatusRedirect() to take a NativeWebRequest in
     addition to the provider ID (SOCIAL-258).
@@ -7,8 +18,13 @@ Compatibility Notes
 Bug Fixes
   * Fixed ConnectController to use the servlet path when doing connection status redirects so that
     the application's DispatcherServlet does not have to be mapped to "/" (SOCIAL-258).
+  * A handful of documentation fixes (SOCIAL-249 and SOCIAL-273)
+
+Improvements
   * OAuth2Version.BEARER's value is now "Bearer" to be consistent with the latest drafts of the
     specification (SOCIAL-272)
+  * Now built against Spring Framework 3.1.0.RELEASE (still compatible with Spring Framework 3.0.6)
+  * Now built against Spring Security 3.1.0.RELEASE
 
 Spring Social 1.0.0 Release (September 8, 2011)
 ===============================================

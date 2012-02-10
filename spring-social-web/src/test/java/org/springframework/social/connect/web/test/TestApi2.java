@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.springframework.social.connect.web.test;
 
-rootProject.name = 'spring-social'
+public interface TestApi2 {
 
-include 'docs'
-include 'spring-social-core'
-include 'spring-social-web'
+}
