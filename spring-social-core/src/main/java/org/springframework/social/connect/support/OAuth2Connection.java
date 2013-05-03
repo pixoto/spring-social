@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class OAuth2Connection<A> extends AbstractConnection<A> {
 
 	public void refresh() {
 		synchronized (getMonitor()) {
-			AccessGrant accessGrant = serviceProvider.getOAuthOperations().refreshAccess(refreshToken, null, null);
+			AccessGrant accessGrant = serviceProvider.getOAuthOperations().refreshAccess(refreshToken, null);
 			initAccessTokens(accessGrant.getAccessToken(), accessGrant.getRefreshToken(), accessGrant.getExpireTime());
 			initApi();
 		}
@@ -145,7 +145,7 @@ public class OAuth2Connection<A> extends AbstractConnection<A> {
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			synchronized (getMonitor()) {
 				if (hasExpired()) {
-					throw new ExpiredAuthorizationException();
+					throw new ExpiredAuthorizationException(null); // TODO: Revisit this null as providerId
 				}
 				try {
 					return method.invoke(OAuth2Connection.this.api, args);

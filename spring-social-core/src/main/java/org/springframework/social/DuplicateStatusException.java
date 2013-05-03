@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.springframework.social;
 
-import org.springframework.social.OperationNotPermittedException;
 
 /**
  * Exception thrown when a duplicate status is posted.
@@ -25,8 +24,8 @@ import org.springframework.social.OperationNotPermittedException;
 public class DuplicateStatusException extends OperationNotPermittedException {
 	private static final long serialVersionUID = 1L;
 
-	public DuplicateStatusException(String message) {
-		super(message);
+	public DuplicateStatusException(String providerId, String message) {
+		super(providerId, message);
 	}
 
 }

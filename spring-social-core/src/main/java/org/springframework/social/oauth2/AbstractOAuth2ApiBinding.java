@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,16 @@ package org.springframework.social.oauth2;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJacksonHttpMessageConverter;
 import org.springframework.social.ApiBinding;
@@ -57,7 +60,7 @@ public abstract class AbstractOAuth2ApiBinding implements ApiBinding {
 	 */
 	protected AbstractOAuth2ApiBinding(String accessToken) {
 		this.accessToken = accessToken;
-		restTemplate = ProtectedResourceClientFactory.create(accessToken, getOAuth2Version());
+		restTemplate = createRestTemplate(accessToken, getOAuth2Version());
 		restTemplate.setMessageConverters(getMessageConverters());
 		configureRestTemplate(restTemplate);
 	}
@@ -67,11 +70,7 @@ public abstract class AbstractOAuth2ApiBinding implements ApiBinding {
 	 * @param requestFactory the request factory
 	 */
 	public void setRequestFactory(ClientHttpRequestFactory requestFactory) {
-		if (isAuthorized()) {
-			restTemplate.setRequestFactory(ProtectedResourceClientFactory.addOAuthSigning(requestFactory, accessToken, getOAuth2Version()));
-		} else {
-			restTemplate.setRequestFactory(requestFactory);
-		}
+		restTemplate.setRequestFactory(requestFactory);
 	}
 
 	// implementing ApiBinding
@@ -139,9 +138,16 @@ public abstract class AbstractOAuth2ApiBinding implements ApiBinding {
 	protected FormHttpMessageConverter getFormMessageConverter() {
 		FormHttpMessageConverter converter = new FormHttpMessageConverter();
 		converter.setCharset(Charset.forName("UTF-8"));
+		List<HttpMessageConverter<?>> partConverters = new ArrayList<HttpMessageConverter<?>>();
+		partConverters.add(new ByteArrayHttpMessageConverter());
+		StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter(Charset.forName("UTF-8"));
+		stringHttpMessageConverter.setWriteAcceptCharset(false);
+		partConverters.add(stringHttpMessageConverter);
+		partConverters.add(new ResourceHttpMessageConverter());		
+		converter.setPartConverters(partConverters);
 		return converter;
 	}
-	
+
 	/**
 	 * Returns a {@link MappingJacksonHttpMessageConverter} to be used by the internal {@link RestTemplate}.
 	 * Override to customize the message converter (for example, to set a custom object mapper or supported media types).
@@ -163,4 +169,12 @@ public abstract class AbstractOAuth2ApiBinding implements ApiBinding {
 		return converter;
 	}
 
+	private RestTemplate createRestTemplate(String accessToken, OAuth2Version version) {
+		RestTemplate client = new RestTemplate(ClientHttpRequestFactorySelector.getRequestFactory());
+		OAuth2RequestInterceptor interceptor = new OAuth2RequestInterceptor(accessToken, version);
+		List<ClientHttpRequestInterceptor> interceptors = new LinkedList<ClientHttpRequestInterceptor>();
+		interceptors.add(interceptor);
+		client.setInterceptors(interceptors);
+		return client;
+	}
 }

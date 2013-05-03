@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
  */
 package org.springframework.social.oauth1;
 
+import static org.hamcrest.core.StringContains.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.*;
-import static org.springframework.test.web.client.RequestMatchers.*;
-import static org.springframework.test.web.client.ResponseCreators.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,10 +27,11 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.util.MultiValueMap;
 
 public class OAuth1TemplateTest {
-
+	
 	private static final String ACCESS_TOKEN_URL = "http://www.someprovider.com/oauth/accessToken";
 	
 	private static final String AUTHENTICATE_URL = "https://www.someprovider.com/oauth/authenticate";
@@ -49,13 +51,12 @@ public class OAuth1TemplateTest {
 		oauth10a = new OAuth1Template("consumer_key", "consumer_secret", REQUEST_TOKEN_URL, AUTHORIZE_URL, null, ACCESS_TOKEN_URL, OAuth1Version.CORE_10_REVISION_A);
 		oauth10 = new OAuth1Template("consumer_key", "consumer_secret", REQUEST_TOKEN_URL, AUTHORIZE_URL, AUTHENTICATE_URL, ACCESS_TOKEN_URL, OAuth1Version.CORE_10);
 
-		customOauth10 = new OAuth1Template("consumer_key", "consumer_secret", REQUEST_TOKEN_URL,
-				AUTHORIZE_URL, null, ACCESS_TOKEN_URL, OAuth1Version.CORE_10) {
+		customOauth10 = new OAuth1Template("consumer_key", "consumer_secret", REQUEST_TOKEN_URL, AUTHORIZE_URL, null, ACCESS_TOKEN_URL, OAuth1Version.CORE_10) {
 			protected void addCustomAuthorizationParameters(MultiValueMap<String,String> parameters) {
 				parameters.set("custom_parameter", "custom_parameter_value");
 			};
 		};
-}
+	}
 
 	@Test
 	public void buildAuthorizeUrl() {
@@ -80,20 +81,18 @@ public class OAuth1TemplateTest {
 		MockRestServiceServer mockServer = MockRestServiceServer.createServer(oauth10a.getRestTemplate());
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+		
 		mockServer
 				.expect(requestTo(REQUEST_TOKEN_URL))
 				.andExpect(method(POST))
-				.andExpect(
-						headerContains("Authorization",
-								"oauth_callback=\"http%3A%2F%2Fwww.someclient.com%2Foauth%2Fcallback\""))
+				.andExpect(headerContains("Authorization", "oauth_callback=\"http%3A%2F%2Fwww.someclient.com%2Foauth%2Fcallback\""))
 				.andExpect(headerContains("Authorization", "oauth_version=\"1.0\""))
 				.andExpect(headerContains("Authorization", "oauth_signature_method=\"HMAC-SHA1\""))
 				.andExpect(headerContains("Authorization", "oauth_consumer_key=\"consumer_key\""))
 				.andExpect(headerContains("Authorization", "oauth_nonce=\""))
 				.andExpect(headerContains("Authorization", "oauth_signature=\""))
 				.andExpect(headerContains("Authorization", "oauth_timestamp=\""))
-				.andRespond(
-						withResponse(new ClassPathResource("requestToken.formencoded", getClass()), responseHeaders));
+				.andRespond(withSuccess(new ClassPathResource("requestToken.formencoded", getClass()), MediaType.APPLICATION_FORM_URLENCODED));
 
 		OAuthToken requestToken = oauth10a.fetchRequestToken("http://www.someclient.com/oauth/callback", null);
 		assertEquals("1234567890", requestToken.getValue());
@@ -113,7 +112,7 @@ public class OAuth1TemplateTest {
 				.andExpect(headerContains("Authorization", "oauth_nonce=\""))
 				.andExpect(headerContains("Authorization", "oauth_signature=\""))
 				.andExpect(headerContains("Authorization", "oauth_timestamp=\""))
-				.andRespond(withResponse(new ClassPathResource("requestToken.formencoded", getClass()), responseHeaders));
+				.andRespond(withSuccess(new ClassPathResource("requestToken.formencoded", getClass()), MediaType.APPLICATION_FORM_URLENCODED));
 
 		OAuthToken requestToken = oauth10.fetchRequestToken("http://www.someclient.com/oauth/callback", null);
 		assertEquals("1234567890", requestToken.getValue());
@@ -136,7 +135,7 @@ public class OAuth1TemplateTest {
 				.andExpect(headerContains("Authorization", "oauth_nonce=\""))
 				.andExpect(headerContains("Authorization", "oauth_signature=\""))
 				.andExpect(headerContains("Authorization", "oauth_timestamp=\""))
-				.andRespond(withResponse(new ClassPathResource("accessToken.formencoded", getClass()), responseHeaders));
+				.andRespond(withSuccess(new ClassPathResource("accessToken.formencoded", getClass()), MediaType.APPLICATION_FORM_URLENCODED));
 
 		OAuthToken requestToken = new OAuthToken("1234567890", "abcdefghijklmnop");
 		OAuthToken accessToken = oauth10a.exchangeForAccessToken(new AuthorizedRequestToken(requestToken, "verifier"), null);
@@ -159,7 +158,7 @@ public class OAuth1TemplateTest {
 				.andExpect(headerContains("Authorization", "oauth_nonce=\""))
 				.andExpect(headerContains("Authorization", "oauth_signature=\""))
 				.andExpect(headerContains("Authorization", "oauth_timestamp=\""))
-				.andRespond(withResponse(new ClassPathResource("accessToken.formencoded", getClass()), responseHeaders));
+				.andRespond(withSuccess(new ClassPathResource("accessToken.formencoded", getClass()), MediaType.APPLICATION_FORM_URLENCODED));
 
 		OAuthToken requestToken = new OAuthToken("1234567890", "abcdefghijklmnop");
 		OAuthToken accessToken = oauth10.exchangeForAccessToken(new AuthorizedRequestToken(requestToken, "verifier"), null);
@@ -197,6 +196,13 @@ public class OAuth1TemplateTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void setRequestFactory_null() {
 		oauth10a.setRequestFactory(null);
+	}
+	
+
+	// private helper
+	@SuppressWarnings("unchecked")
+	private RequestMatcher headerContains(String name, String substring) {
+		return header(name, containsString(substring));
 	}
 
 }

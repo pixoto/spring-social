@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,14 @@ public interface DisconnectInterceptor<S> {
 
 	/**
 	 * Called immediately before a connection is removed.
-	 * @param providerId the providerId for the connection(s) to be removed.
+	 * @param connectionFactory the connection factory for the service provider
 	 * @param request the web request
 	 */
 	void preDisconnect(ConnectionFactory<S> connectionFactory, WebRequest request);	
 	
 	/**
 	 * Called immediately after a connection is removed.
-	 * @param providerId the providerId for the connection(s) to be removed.
+	 * @param connectionFactory the connection factory for the service provider
 	 * @param request the web request
 	 */
 	void postDisconnect(ConnectionFactory<S> connectionFactory, WebRequest request);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.springframework.social.connect.web;
 
 import static org.junit.Assert.*;
 
-import java.net.URL;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -190,6 +189,22 @@ public class ConnectSupportTest {
 		String url = support.buildOAuthUrl(new TestOAuth1ConnectionFactory(OAuth1Version.CORE_10_REVISION_A), request, additionalParameters);
 		assertEquals("https://serviceprovider.com/oauth/authorize?display=popup", url);
 	}
+	
+	@Test
+	public void buildOAuthUrl_OAuth10a_withAdditionalParametersFromRequest() {
+		ConnectSupport support = new ConnectSupport();
+		MockHttpServletRequest mockRequest = new PortAwareMockHttpServletRequest();
+		mockRequest.setScheme("http");
+		mockRequest.setServerName("somesite.com");
+		mockRequest.setRequestURI("/connect/someprovider");
+		mockRequest.addParameter("condiment", "ketchup");
+		ServletWebRequest request = new ServletWebRequest(mockRequest);
+		MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>();
+		additionalParameters.set("display", "popup");
+		String url = support.buildOAuthUrl(new TestOAuth1ConnectionFactory(OAuth1Version.CORE_10_REVISION_A), request, additionalParameters);
+		assertEquals("https://serviceprovider.com/oauth/authorize?display=popup&condiment=ketchup", url);
+	}
+		
 
 	@Test
 	public void buildOAuthUrl_OAuth2() {
@@ -271,7 +286,7 @@ public class ConnectSupportTest {
 	}
 
 	@Test
-	public void buildOAuthUrl_OAuth2_withAdditionalParametersl() throws Exception {
+	public void buildOAuthUrl_OAuth2_withAdditionalParameters() throws Exception {
 		ConnectSupport support = new ConnectSupport();
 		MockHttpServletRequest mockRequest = new PortAwareMockHttpServletRequest();
 		mockRequest.setScheme("http");
@@ -283,6 +298,22 @@ public class ConnectSupportTest {
 		additionalParameters.set("display", "popup");
 		String url = support.buildOAuthUrl(connectionFactory, request, additionalParameters);
 		assertEquals("https://serviceprovider.com/oauth/authorize?display=popup&redirect_uri=http://somesite.com/connect/someprovider", url);
+	}
+
+	@Test
+	public void buildOAuthUrl_OAuth2_withAdditionalParametersFromRequest() throws Exception {
+		ConnectSupport support = new ConnectSupport();
+		MockHttpServletRequest mockRequest = new PortAwareMockHttpServletRequest();
+		mockRequest.setScheme("http");
+		mockRequest.setServerName("somesite.com");
+		mockRequest.setRequestURI("/connect/someprovider");
+		mockRequest.addParameter("condiment", "ketchup");
+		ServletWebRequest request = new ServletWebRequest(mockRequest);
+		TestOAuth2ConnectionFactory connectionFactory = new TestOAuth2ConnectionFactory();
+		MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>();
+		additionalParameters.set("display", "popup");
+		String url = support.buildOAuthUrl(connectionFactory, request, additionalParameters);
+		assertEquals("https://serviceprovider.com/oauth/authorize?display=popup&condiment=ketchup&redirect_uri=http://somesite.com/connect/someprovider", url);
 	}
 
 	private static class PortAwareMockHttpServletRequest extends MockHttpServletRequest {
@@ -333,6 +364,46 @@ public class ConnectSupportTest {
 		assertEquals("http://someprovider.com/testuser", connection.getProfileUrl());
 	}
 
+	@Test
+	public void buildOAuthUrl_OAuth10_withCallbackUrl() throws Exception {
+		ConnectSupport support = new ConnectSupport();
+		support.setCallbackUrl("https://overridingcallbackurl.com:4321");
+		MockHttpServletRequest mockRequest = new PortAwareMockHttpServletRequest();
+		mockRequest.setScheme("http");
+		mockRequest.setServerName("somesite.com");
+		mockRequest.setServletPath("/connect/someprovider");
+		ServletWebRequest request = new ServletWebRequest(mockRequest);
+		String url = support.buildOAuthUrl(new TestOAuth1ConnectionFactory(OAuth1Version.CORE_10), request);
+		assertEquals("https://serviceprovider.com/oauth/authorize?oauth_callback=https://overridingcallbackurl.com:4321", url);
+	}
+
+	@Test
+	public void buildOAuthUrl_OAuth10a_withCallbackUrl() throws Exception {
+		ConnectSupport support = new ConnectSupport();
+		support.setCallbackUrl("https://overridingcallbackurl.com:4321");
+		MockHttpServletRequest mockRequest = new PortAwareMockHttpServletRequest();
+		mockRequest.setScheme("http");
+		mockRequest.setServerName("somesite.com");
+		mockRequest.setServletPath("/connect/someprovider");
+		ServletWebRequest request = new ServletWebRequest(mockRequest);
+		String url = support.buildOAuthUrl(new TestOAuth1ConnectionFactory(OAuth1Version.CORE_10_REVISION_A), request);
+		assertEquals("https://serviceprovider.com/oauth/authorize", url);
+	}
+
+	
+	@Test
+	public void buildOAuthUrl_OAuth2_withCallbackUrl() throws Exception {
+		ConnectSupport support = new ConnectSupport();
+		support.setCallbackUrl("https://overridingcallbackurl.com:4321");
+		MockHttpServletRequest mockRequest = new PortAwareMockHttpServletRequest();
+		mockRequest.setScheme("http");
+		mockRequest.setServerName("somesite.com");
+		mockRequest.setServletPath("/connect/someprovider");
+		ServletWebRequest request = new ServletWebRequest(mockRequest);
+		String url = support.buildOAuthUrl(new TestOAuth2ConnectionFactory(), request);
+		assertEquals("https://serviceprovider.com/oauth/authorize?redirect_uri=https://overridingcallbackurl.com:4321", url);
+	}
+	
 	// private helpers
 	
 	private static class TestOAuth1ConnectionFactory extends OAuth1ConnectionFactory<TestApi> {
@@ -377,14 +448,6 @@ public class ConnectSupportTest {
 					assertNull(additionalParameters);
 					return new OAuthToken("accessToken", "accessTokenSecret");
 				}								
-
-				private String callbackQuery(String callbackUrl) {
-					String callbackQuery = "";
-					if (callbackUrl != null) {
-						callbackQuery = "?oauth_callback=" + callbackUrl;
-					}
-					return callbackQuery;
-				}				
 			};
 		}
 		
@@ -426,7 +489,19 @@ public class ConnectSupportTest {
 					assertNull(additionalParameters);
 					return new AccessGrant("access-token");
 				}
+				public AccessGrant exchangeCredentialsForAccess(String username, String password, MultiValueMap<String, String> additionalParameters) {
+					return null;
+				}				
 				public AccessGrant refreshAccess(String refreshToken, String scope, MultiValueMap<String, String> additionalParameters) {
+					return null;
+				}
+				public AccessGrant refreshAccess(String refreshToken, MultiValueMap<String, String> additionalParameters) {
+					return null;
+				}
+				public AccessGrant authenticateClient() {
+					return null;
+				}
+				public AccessGrant authenticateClient(String scope) {
 					return null;
 				}
 			};

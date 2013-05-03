@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -477,11 +477,23 @@ public class JdbcUsersConnectionRepositoryTest {
 				}
 				public AccessGrant exchangeForAccess(String authorizationGrant, String redirectUri, MultiValueMap<String, String> additionalParameters) {
 					return null;
+				}				
+				public AccessGrant exchangeCredentialsForAccess(String username, String password, MultiValueMap<String, String> additionalParameters) {
+					return null;
+				}
+				public AccessGrant refreshAccess(String refreshToken, MultiValueMap<String, String> additionalParameters) {
+					return new AccessGrant("765432109", "read", "654321098", 3600);
 				}
 				public AccessGrant refreshAccess(String refreshToken, String scope, MultiValueMap<String, String> additionalParameters) {
 					return new AccessGrant("765432109", "read", "654321098", 3600);
-				}								
-			};
+				}
+				public AccessGrant authenticateClient() {
+					return null;
+				}
+				public AccessGrant authenticateClient(String scope) {
+					return null;
+				}
+            };
 		}
 
 		public TestFacebookApi getApi(final String accessToken) {
@@ -493,7 +505,7 @@ public class JdbcUsersConnectionRepositoryTest {
 		}
 		
 	}
-		
+
 	public interface TestFacebookApi {
 		
 		String getAccessToken();

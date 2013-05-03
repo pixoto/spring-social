@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ package org.springframework.social;
 @SuppressWarnings("serial")
 public class InvalidAuthorizationException extends RejectedAuthorizationException {
 
-	public InvalidAuthorizationException(String message) {
-		super(message);
+	public InvalidAuthorizationException(String providerId, String message) {
+		super(providerId, message);
 	}
 	
 }

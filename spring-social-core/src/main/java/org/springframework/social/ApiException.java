@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,22 @@ package org.springframework.social;
 @SuppressWarnings("serial")
 public class ApiException extends SocialException {
 
-	public ApiException(String message) {
+	private String providerId;
+
+	public ApiException(String providerId, String message) {
 		super(message);
+		this.providerId = providerId;
 	}
 
-	public ApiException(String message, Throwable cause) {
+	public ApiException(String providerId, String message, Throwable cause) {
 		super(message, cause);
+	}
+	
+	/**
+	 * The ID of the provider for which the API exception occurred.
+	 */
+	public String getProviderId() {
+		return providerId;
 	}
 
 }

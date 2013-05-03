@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ public class InsufficientPermissionException extends OperationNotPermittedExcept
 	
 	private final String requiredPermission;
 	
-	public InsufficientPermissionException() {
-		super("Insufficient permission for this operation.");
+	public InsufficientPermissionException(String providerId) {
+		super(providerId, "Insufficient permission for this operation.");
 		this.requiredPermission = null;
 	}
 
-	public InsufficientPermissionException(String requiredPermission) {
-		super("The operation requires '" + requiredPermission + "' permission.");
+	public InsufficientPermissionException(String providerId, String requiredPermission) {
+		super(providerId, "The operation requires '" + requiredPermission + "' permission.");
 		this.requiredPermission = requiredPermission;
 	}
 

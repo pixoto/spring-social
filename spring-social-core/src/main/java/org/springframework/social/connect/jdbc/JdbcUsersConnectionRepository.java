@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import org.springframework.social.connect.UsersConnectionRepository;
 
 /**
  * {@link UsersConnectionRepository} that uses the JDBC API to persist connection data to a relational database.
- * The supporting schema is defined in JdbcMultiUserConnectionRepository.sql.
+ * The supporting schema is defined in JdbcUsersConnectionRepository.sql.
  * @author Keith Donald
  */
 public class JdbcUsersConnectionRepository implements UsersConnectionRepository {
