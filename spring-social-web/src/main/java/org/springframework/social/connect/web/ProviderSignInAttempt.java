@@ -49,7 +49,13 @@ public class ProviderSignInAttempt implements Serializable {
 		this.connectionData = connection.createData();
 		this.connectionFactoryLocator = connectionFactoryLocator;
 		this.connectionRepository = connectionRepository;		
-	}	
+	}
+	
+	public ProviderSignInAttempt(ConnectionData connectionData, ConnectionFactoryLocator connectionFactoryLocator, UsersConnectionRepository connectionRepository) {
+		this.connectionData = connectionData;
+		this.connectionFactoryLocator = connectionFactoryLocator;
+		this.connectionRepository = connectionRepository;		
+	}		
 	
 	public void setConnectionFactoryLocator(ConnectionFactoryLocator connectionFactoryLocator) {
 		this.connectionFactoryLocator = connectionFactoryLocator;
