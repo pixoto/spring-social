@@ -243,8 +243,9 @@ public class ProviderSignInController {
 	private RedirectView handleSignIn(Connection<?> connection, ConnectionFactory<?> connectionFactory, NativeWebRequest request) {
 		List<String> userIds = usersConnectionRepository.findUserIdsWithConnection(connection);
 		if (userIds.size() == 0) {
-			ProviderSignInAttempt signInAttempt = new ProviderSignInAttempt(connection, connectionFactoryLocator, usersConnectionRepository);
-			request.setAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, signInAttempt, RequestAttributes.SCOPE_SESSION);
+			//ProviderSignInAttempt signInAttempt = new ProviderSignInAttempt(connection, connectionFactoryLocator, usersConnectionRepository);
+			//request.setAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, signInAttempt, RequestAttributes.SCOPE_SESSION);
+			request.setAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, connection.createData(), RequestAttributes.SCOPE_SESSION);
 			return redirect(signUpUrl);
 		} else if (userIds.size() == 1) {
 			usersConnectionRepository.createConnectionRepository(userIds.get(0)).updateConnection(connection);

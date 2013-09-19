@@ -18,6 +18,13 @@ package org.springframework.social.connect.web;
 import org.springframework.social.connect.Connection;
 import org.springframework.web.context.request.RequestAttributes;
 
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.social.connect.ConnectionData;
+import org.springframework.social.connect.ConnectionFactoryLocator;
+import org.springframework.social.connect.UsersConnectionRepository;
+import javax.servlet.ServletContext;
+
+
 /**
  * Helper methods that support provider user sign-in scenarios.
  * @author Keith Donald
@@ -62,4 +69,42 @@ public class ProviderSignInUtils {
 		return (ProviderSignInAttempt) request.getAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, RequestAttributes.SCOPE_SESSION);
 	}
 	
+	/**
+	 * Get the connection to the provider user the client attempted to sign-in as.
+	 * Using this connection you may fetch a {@link Connection#fetchUserProfile() provider user profile} and use that to pre-populate a local user registration/signup form.
+	 * You can also lookup the id of the provider and use that to display a provider-specific user-sign-in-attempt flash message e.g. "Your Facebook Account is not connected to a Local account. Please sign up."
+	 * Must be called before handlePostSignUp() or else the sign-in attempt will have been cleared from the session.
+	 * Returns null if no provider sign-in has been attempted for the current user session.
+	 * @param request the current request attributes, used to extract sign-in attempt information from the current user session
+	 */
+	public static Connection<?> getConnection(RequestAttributes request, ConnectionFactoryLocator connectionFactoryLocator, UsersConnectionRepository usersConnectionRepository) {
+		ProviderSignInAttempt signInAttempt = getProviderUserSignInAttempt(request, connectionFactoryLocator, usersConnectionRepository);
+		return signInAttempt != null ? signInAttempt.getConnection() : null;
+	}
+
+	/**
+	 * Add the connection to the provider user the client attempted to sign-in with to the new local user's set of connections.
+	 * Should be called after signing-up a new user in the context of a provider sign-in attempt.
+	 * In this context, the user did not yet have a local account but attempted to sign-in using one of his or her existing provider accounts.
+	 * Ensures provider sign-in attempt session context is cleaned up.
+	 * Does nothing if no provider sign-in was attempted for the current user session (is safe to call in that case).
+	 * @param request the current request attributes, used to extract sign-in attempt information from the current user session
+	 */
+	public static void handlePostSignUp(String userId, RequestAttributes request, ConnectionFactoryLocator connectionFactoryLocator, UsersConnectionRepository usersConnectionRepository) {
+		ProviderSignInAttempt signInAttempt = getProviderUserSignInAttempt(request, connectionFactoryLocator, usersConnectionRepository);
+		if (signInAttempt != null) {
+			signInAttempt.addConnection(userId);
+			request.removeAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, RequestAttributes.SCOPE_SESSION);
+		}
+	}
+
+	private static ProviderSignInAttempt getProviderUserSignInAttempt(RequestAttributes request, ConnectionFactoryLocator connectionFactoryLocator, UsersConnectionRepository usersConnectionRepository) {
+		ConnectionData connectionData = (ConnectionData) request.getAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, RequestAttributes.SCOPE_SESSION);
+		if (connectionData == null) {
+		    return null;
+		}
+		ProviderSignInAttempt signInAttempt = new ProviderSignInAttempt(connectionData, connectionFactoryLocator, usersConnectionRepository);
+		return signInAttempt;
+	}
+
 }

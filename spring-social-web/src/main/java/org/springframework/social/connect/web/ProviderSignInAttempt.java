@@ -41,9 +41,9 @@ public class ProviderSignInAttempt implements Serializable {
 
 	private final ConnectionData connectionData;
 	
-	private final ConnectionFactoryLocator connectionFactoryLocator;
+	private transient ConnectionFactoryLocator connectionFactoryLocator;
 	
-	private final UsersConnectionRepository connectionRepository;
+	private transient UsersConnectionRepository connectionRepository;
 		
 	public ProviderSignInAttempt(Connection<?> connection, ConnectionFactoryLocator connectionFactoryLocator, UsersConnectionRepository connectionRepository) {
 		this.connectionData = connection.createData();
@@ -51,6 +51,20 @@ public class ProviderSignInAttempt implements Serializable {
 		this.connectionRepository = connectionRepository;		
 	}
 	
+	public ProviderSignInAttempt(ConnectionData connectionData, ConnectionFactoryLocator connectionFactoryLocator, UsersConnectionRepository connectionRepository) {
+		this.connectionData = connectionData;
+		this.connectionFactoryLocator = connectionFactoryLocator;
+		this.connectionRepository = connectionRepository;
+	}
+
+	public void setConnectionFactoryLocator(ConnectionFactoryLocator connectionFactoryLocator) {
+		this.connectionFactoryLocator = connectionFactoryLocator;
+	}
+
+	public void setConnectionRepository(UsersConnectionRepository connectionRepository) {
+		this.connectionRepository = connectionRepository;
+	}
+
 	/**
 	 * Get the connection to the provider user account the client attempted to sign-in as.
 	 * Using this connection you may fetch a {@link Connection#fetchUserProfile() provider user profile} and use that to pre-populate a local user registration/signup form.
