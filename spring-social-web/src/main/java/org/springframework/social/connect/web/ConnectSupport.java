@@ -34,7 +34,6 @@ import org.springframework.social.oauth1.OAuth1Parameters;
 import org.springframework.social.oauth1.OAuth1Version;
 import org.springframework.social.oauth1.OAuthToken;
 import org.springframework.social.oauth2.AccessGrant;
-import org.springframework.social.oauth2.GrantType;
 import org.springframework.social.oauth2.OAuth2Operations;
 import org.springframework.social.oauth2.OAuth2Parameters;
 import org.springframework.util.LinkedMultiValueMap;
@@ -65,7 +64,7 @@ public class ConnectSupport {
 	 * Setting this flag to true has {@link #buildOAuthUrl(ConnectionFactory, NativeWebRequest) oauthUrl} return this authenticate URL.
 	 * @param useAuthenticateUrl whether to use the authenticat url or not
 	 * @see OAuth1Operations#buildAuthenticateUrl(String, OAuth1Parameters)
-	 * @see OAuth2Operations#buildAuthenticateUrl(GrantType, OAuth2Parameters)
+	 * @see OAuth2Operations#buildAuthenticateUrl(OAuth2Parameters)
 	 */
 	public void setUseAuthenticateUrl(boolean useAuthenticateUrl) {
 		this.useAuthenticateUrl = useAuthenticateUrl;
@@ -214,9 +213,9 @@ public class ConnectSupport {
 		parameters.add("state", state);
 		request.setAttribute(OAUTH2_STATE_ATTRIBUTE, state, RequestAttributes.SCOPE_SESSION);
 		if (useAuthenticateUrl) { 
-			return oauthOperations.buildAuthenticateUrl(GrantType.AUTHORIZATION_CODE, parameters);						
+			return oauthOperations.buildAuthenticateUrl(parameters);
 		} else {
-			return oauthOperations.buildAuthorizeUrl(GrantType.AUTHORIZATION_CODE, parameters);			
+			return oauthOperations.buildAuthorizeUrl(parameters);
 		}
 	}
 
