@@ -25,7 +25,7 @@ import javax.servlet.http.HttpSession;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -290,7 +290,7 @@ public class SocialAuthenticationFilter extends AbstractAuthenticationProcessing
 			Assert.isInstanceOf(SocialUserDetails.class, success.getPrincipal(), "unexpected principle type");
 			updateConnections(authService, token, success);			
 			return success;
-		} catch (BadCredentialsException e) {
+		} catch (UsernameNotFoundException e) {
 			// connection unknown, register new user?
 			if (signupUrl != null) {
 				// store ConnectionData in session and redirect to register page
@@ -321,7 +321,8 @@ public class SocialAuthenticationFilter extends AbstractAuthenticationProcessing
 	}
 	
 	private void addSignInAttempt(HttpSession session, Connection<?> connection) {
-		session.setAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, new ProviderSignInAttempt(connection, authServiceLocator, usersConnectionRepository));
+		session.setAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, connection.createData());
+		//session.setAttribute(ProviderSignInAttempt.SESSION_ATTRIBUTE, new ProviderSignInAttempt(connection, authServiceLocator, usersConnectionRepository));
 	}
 
 	private static final String DEFAULT_FAILURE_URL = "/signin";

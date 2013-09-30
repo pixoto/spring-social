@@ -41,7 +41,7 @@ public class SocialAuthenticationToken extends AbstractAuthenticationToken {
 
 	private final Serializable principle;
 	
-	private final Connection<?> connection;
+	private transient final Connection<?> connection;
 
 	private final Map<String, String> providerAccountData;
 
