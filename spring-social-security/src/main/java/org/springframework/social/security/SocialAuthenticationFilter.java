@@ -25,7 +25,7 @@ import javax.servlet.http.HttpSession;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -290,7 +290,7 @@ public class SocialAuthenticationFilter extends AbstractAuthenticationProcessing
 			Assert.isInstanceOf(SocialUserDetails.class, success.getPrincipal(), "unexpected principle type");
 			updateConnections(authService, token, success);			
 			return success;
-		} catch (UsernameNotFoundException e) {
+		} catch (BadCredentialsException e) {
 			// connection unknown, register new user?
 			if (signupUrl != null) {
 				// store ConnectionData in session and redirect to register page
